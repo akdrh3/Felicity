@@ -1,3 +1,4 @@
+const { NULL } = require("mysql/lib/protocol/constants/types");
 const video = require("./videocall_model");
 var videocall = module.exports;
 
@@ -24,6 +25,19 @@ videocall.doctorLeaveRoom = function doctorLeaveRoom(rid, callback) {
 
         callback(null, { msg: "Successfully left the reservation room" });
     })
+}
+
+videocall.sendDoctorSignal = function sendDoctorSignal(rid, io, socket, callback) {
+    video.getDoctorSocket(rid, (error, res) => {
+        if (error) callback(error, null);
+
+        //when doctor socket id exists
+        if (res != NULL) {
+            console.log(res)
+            io.to(res).emit("me",({dsocketId : res, otherSocketId : socket.id}))
+        }
+    })
+
 }
 videocall.patientLeaveRoom = function patientLeaveRoom(rid, callback) {
     video.updatePatientInRoom(0, rid, (err, result) => {
@@ -66,17 +80,18 @@ videocall.checkPatientInRoom = function checkPatientInRoom(rid, io, socket, call
             // Send the patient's socket id to doctor
             video.getPatientSocket(rid, (error, res) => {
                 if (error) callback(error, null);
-                socket.emit("me", ({ socketid: socket.id, otherSocketId: res }));
+                console.log(socket.id, res)
+                socket.emit("me", ({ dsocketid: socket.id, otherSocketId: res }));
 
                 // Inform the patient that doctor is entering the room
-                io.to(res).emit("room-entered", ({ socketid: socket.id }));
+                // io.to(res).emit("room-entered", ({ socketid: socket.id }));
             })
         }
         // When patient is not in the room
-        else {
-            // Inform doctor to wait until patient enters the room
-            socket.emit("me", ({ socketid: socket.id, otherSocketId: null }));
-        }
-        callback(null, result);
+        // else {
+        //     // Inform doctor to wait until patient enters the room
+        //     socket.emit("me", ({ socketid: socket.id, otherSocketId: null }));
+        // }
+        // callback(null, result);
     })
 }

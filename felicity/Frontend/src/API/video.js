@@ -73,6 +73,7 @@ const ContextProvider = ({ children }) => {
         window.sessionStorage.setItem('role', JSON.stringify(role));
         window.sessionStorage.setItem('jwt', JSON.stringify(jwt));
         window.sessionStorage.setItem('name', JSON.stringify(name));
+        
         if (role) { // Patient
             window.sessionStorage.setItem('pid', JSON.stringify(jwt));
             window.sessionStorage.setItem('did', 'null');
@@ -336,6 +337,8 @@ const ContextProvider = ({ children }) => {
 
     const startCall = (reservation_id) => {
         setRid(reservation_id);
+        window.sessionStorage.setItem('rid', JSON.stringify(reservation_id)); //store rid to the session storage
+        console.log(rid)
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then((currentStream) => {
                 setStream(currentStream);
@@ -345,23 +348,78 @@ const ContextProvider = ({ children }) => {
 
         socket.emit("start", { reservation_id, role });
 
-        socket.on("me", ({ socketid, otherSocketId }) => {
-            setMe(socketid);
-            if (otherSocketId == null) {
-                console.log("Waiting for other user to join the room")
-                socket.on("room-entered", ({ socketid }) => {
-                    setUserToCall(socketid);
-                    setUserJoined(true);
-                    console.log("User joined the room")
-                })
-            }
-            else {
-                setUserToCall(otherSocketId);
-                setUserJoined(true);
-                console.log("Joining the room");
-                console.log(userToCall);
-            }
-        });
+        socket.on("me", ({ dsocketid, otherSocketId }) => {
+            console.log("me",dsocketid, otherSocketId)
+            setMe(dsocketid);
+            setUserToCall(otherSocketId)
+            setUserJoined(true);
+            socket.emit("doctor-in", ({userToCall}));
+            })
+        
+
+        socket.on("room-entered", ({psocketId, dsocketId}) => {
+            console.log("room-entered")
+            setMe(psocketId)
+            setUserToCall(dsocketId)
+            setUserJoined(true);
+            })
+        
+        
+
+
+        
+
+        // socket.on("patient_in", ({dsocketid, pSocketId}) => {
+        //     setMe(dsocketid);
+        //     setUserToCall(pSocketId);
+        //     setUserJoined(true);
+        //     console.log("Joining the room");
+        //     console.log(userToCall);
+        // });
+        
+        // socket.on("doctor_in", ({psocketid, dSocketId}) => {
+        //     setMe(psocketid);
+        //     setUserToCall(dSocketId);
+        //     setUserJoined(true);
+        //     console.log("Joining the room");
+        //     console.log(userToCall);            
+        // })
+
+
+
+        //     if (otherSocketId == null) {
+        //         console.log("Waiting for other user to join the room")
+        //         socket.on("room-entered", ({ socketid }) => {
+        //             setUserToCall(socketid);
+        //             setUserJoined(true);
+        //             console.log("User joined the room")
+        //         })
+        //     }
+        //     else {
+        //         setUserToCall(otherSocketId);
+        //         setUserJoined(true);
+        //         console.log("Joining the room");
+        //         console.log(userToCall);
+        //     }
+        // });
+
+        // socket.on("me", ({ socketid, otherSocketId }) => {
+        //     setMe(socketid);
+        //     if (otherSocketId == null) {
+        //         console.log("Waiting for other user to join the room")
+        //         socket.on("room-entered", ({ socketid }) => {
+        //             setUserToCall(socketid);
+        //             setUserJoined(true);
+        //             console.log("User joined the room")
+        //         })
+        //     }
+        //     else {
+        //         setUserToCall(otherSocketId);
+        //         setUserJoined(true);
+        //         console.log("Joining the room");
+        //         console.log(userToCall);
+        //     }
+        // });
 
 
         socket.on("calluser", ({ from, someName: callerName, signal }) => {

@@ -28,6 +28,7 @@ app.use(require("./conv/router"));
 app.use(require("./videocall/router"));
 app.use(require("./availabledoctor/router"));      // "/available-doctor"
 app.use(require("./profile/router"));
+app.use(require("./rating/router"));
 app.use("/uploads", express.static("uploads"));
 app.use(require("./doctornote/router"));
 app.use("/profile_images", express.static("profile_images"));
@@ -127,23 +128,32 @@ io.on("connection", async socket => {
         
         // When doctor enters the room
         if (!role) {
-            videocall.doctorEnterRoom(rid, (error, result) => {
-                if (error) console.log(error);
-            })
             videocall.checkPatientInRoom(rid, io, socket, (error, result) => {
                 if (error) console.log(error);
             })
         }
+
+
         // When patient enters the room
         else {
             videocall.patientEnterRoom(rid, (error, result) => {
                 if (error) console.log(error);
             })
-            videocall.checkDoctorInRoom(rid, io, socket, (error, result) => {
+
+            videocall.sendDoctorSignal(rid, io, socket, (error, result) => {
                 if (error) console.log(error);
             })
+
+            
+            // videocall.checkDoctorInRoom(rid, io, socket, (error, result) => {
+            //     if (error) console.log(error);
+            // })
         }
 
+    });
+
+    socket.on("doctor-in", ({ userToCall}) => {
+        io.to(userToCall).emit("room-entered",{ psocketId : userToCall, dsocketId : socket.id })
     });
 
     socket.on("leavecall", (data) => {
