@@ -18,7 +18,7 @@ function addNewRating(req, res) {
     rating.addNewRating([rid, pid, did, rate, note1, note2], (err, result) => {
         if (err) {
             console.log(err);
-            res.json({ errMsg: "Error: Failed on reading schedule." });
+            res.json({ errMsg: "Error: Failed on inserting rating data." });
         }
         else {
             res.json(result);
